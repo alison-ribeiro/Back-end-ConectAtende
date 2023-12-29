@@ -1,97 +1,132 @@
 import { Request, Response } from "express";
 import { body, validationResult } from "express-validator";
 import {User} from "../models/User";
-import bcrypt from "bcrypt";
-import JWT from "jsonwebtoken";
+
+
+
+import { generateToken } from "../utils/tokenUtils";
+
+import { createUser } from "./userController";
+import { hashPassword } from "../utils/passwordHashUtils";
+import { compareHash } from "../utils/passwordHashCompareUtils";
 
 export const ping = (req : Request, res : Response 		) => { 
-
-	res.json({ pong: true });
+	const authHeader = req.headers.authorization;
+	res.json({ pong: authHeader });
 };
-
+ 
 export const register = [
 	
 	body("name").trim().escape().notEmpty().withMessage("Nome não informado"),
-	body("email").isEmail().normalizeEmail().withMessage("E-mail não informado"),
+	body("email").toLowerCase().isEmail().withMessage("E-mail não informado").normalizeEmail()
+		.custom(async (value) => {
+			const user = await User.findOne({ email: value });
+			if (user) {
+				return Promise.reject("E-mail já está em uso");
+			}
+		}),
+	body("username").trim().escape().notEmpty().withMessage("Nome de usuário não informado").custom(async (value) => {
+		const user = await User.findOne({ username: value });
+		if (user) {
+			return Promise.reject("Nome de usuário já está em uso");
+		}
+	}),
 	body("password").trim().escape().notEmpty().withMessage("Senha não informada"),
 	body("confirmPassword").trim().escape().notEmpty().withMessage("Confirmação de senha não informada").custom((value, { req }) => {
 		if (value !== req.body.password) {
 			throw new Error("Password confirmation does not match password");
 		}
-		// Indicates the success of this synchronous custom validator
 		return true;
 	}),
-
+	
 	async (req: Request, res: Response) => {
 		const errors = validationResult(req);
 		if (!errors.isEmpty()) {
 			return res.status(422).json({ errors: errors.array() });
 		}
 
-
-		const userExists = await User.findOne({ email: req.body.email });
-
-		if(userExists) {
-			return res.status(409).json({ error: "E-mail já cadastrado" });
-		}
-		const salt = await bcrypt.genSalt(12);
-		const passwordHash = await bcrypt.hash(req.body.password, salt);
-
-		const user = new User({
-			name: req.body.name,
-			email:req.body.email,
-			password: passwordHash
-		});
-		try {
-			const savedUser = await user.save();
-			res.status(201).json(savedUser);
-		} catch (error) {
-			res.status(500).json({ error: "Erro ao salvar no servidor"});
-		}
-
-
+		await createUser(req, res);
 	}
 ];
 
 export const login = [
-	
-	
-	body("email").isEmail().normalizeEmail().withMessage("E-mail não informado"),
+	body("loginIdentifier").trim().escape().notEmpty().withMessage("E-mail ou nome de usuário não informado"),
 	body("password").trim().escape().notEmpty().withMessage("Senha não informada"),
 
 	async (req: Request, res: Response) => {
-		
+		const { loginIdentifier, password } = req.body;
+
+		const user = await User.findOne({
+			$or: [
+				{ email: loginIdentifier },
+				{ username: loginIdentifier }
+			]
+		});
+
+		if (!user) {
+			return res.status(422).json({ error: "Usuário não encontrado" });
+		}
+
+		const checkPassword = await compareHash(password, user.password);
+
+		if (!checkPassword) {
+			return res.status(422).json({ error: "Senha incorreta" });
+		}
+
+		try {
+			const token = generateToken(user);
+			res.status(200).json({ msg: "Autenticação realizada com sucesso", token });
+		} catch (error) {
+			res.status(401).json({ error: "Falha na autenticação" });
+		}
+	}
+];
+
+
+export const changePassword = [
+	body("email")
+		.isEmail().withMessage("E-mail não informado")
+		.normalizeEmail(),
+	body("password")
+		.trim().escape().notEmpty().withMessage("Senha não informada"),
+	body("newPassword")
+		.trim().escape().notEmpty().withMessage("Nova senha não informada"),
+	body("confirmPassword")
+		.trim().escape().notEmpty().withMessage("Confirmação de senha não informada"),
+
+	async (req: Request, res: Response) => {
+		const { email, newPassword, confirmPassword } = req.body;
 		const errors = validationResult(req);
+
 		if (!errors.isEmpty()) {
 			return res.status(422).json({ errors: errors.array() });
 		}
 
-		const user = await User.findOne({ email: req.body.email });
-
-		if(!user) {
-			return res.status(422).json({ error: "Usuario não encontrado" });
-		}
-		const checkPassword = await bcrypt.compare(req.body.password, user.password);
-		if (!checkPassword){
-			return res.status(422).json({ error: "Senha ou email incorreto" });
-		}
 		try {
-			const secret = process.env.JWT_SECRET as string;
-			const token = JWT.sign(
-				{
-					id:user._id,
-				},
-				secret,
-			);
+			const user = await User.findOne({ email });
 
-			res.status(200).json({msg: "Autenticação realizada com sucesso", token });
+			if (!user) {
+				return res.status(404).json({ error: "Usuário não encontrado" });
+			}
+
+			const checkPassword = await compareHash(req.body.password, user.password);
+
+			if (!checkPassword) {
+				return res.status(422).json({ error: "Senha incorreta" });
+			}
+
+			if (newPassword !== confirmPassword) {
+				return res.status(422).json({ error: "Senhas não conferem" });
+			}
+
+			const passwordHash = await hashPassword(newPassword);
+			user.password = passwordHash;
+
+			await user.save();
+
+			res.status(200).json({ message: "Senha alterada com sucesso" });
 		} catch (error) {
-			
+			res.status(500).json({ error: "Erro ao alterar a senha" });
 		}
-
 	}
 ];
-
-// export const changePassword = async (req: Request, res: Response) => {
-	
-// };

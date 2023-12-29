@@ -14,7 +14,7 @@ dotenv.config();
 
 const dbUrl = process.env.DB_URL as string;
 const dbName = process.env.DB_DATABASE as string;
-console.log(`${dbUrl}/${dbName}`)
+
 mongoose.connect(`${dbUrl}${dbName}`)
 
 	.then(() => {

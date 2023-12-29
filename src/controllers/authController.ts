@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { body, validationResult } from "express-validator";
+import jwt from "jsonwebtoken";
 import {User} from "../models/User";
 
 
@@ -9,10 +10,14 @@ import { generateToken } from "../utils/tokenUtils";
 import { createUser } from "./userController";
 import { hashPassword } from "../utils/passwordHashUtils";
 import { compareHash } from "../utils/passwordHashCompareUtils";
+import { toExtractIdToken } from "../utils/toExtractIdToken";
 
-export const ping = (req : Request, res : Response 		) => { 
-	const authHeader = req.headers.authorization;
-	res.json({ pong: authHeader });
+export const ping = (req : Request, res : Response) => { 
+	const token= req.headers.authorization as string;
+	
+	const decoded = toExtractIdToken(token);
+	
+	res.json({ pong: decoded });
 };
  
 export const register = [

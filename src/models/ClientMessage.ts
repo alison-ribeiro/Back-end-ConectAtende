@@ -1,25 +1,31 @@
-import { Document, model, Schema, Types } from "mongoose";
+import { Document, model, Schema } from "mongoose";
 
 interface IMessage {
-  sender: Types.ObjectId;
+  sender: string;
   content: string;
   timestamp: Date;
 }
 
 export interface IClientMessage extends Document {
   name: string;
-  phone: number;
+  phone: string;
   status: string;
   messages: IMessage[];
+	store:string;
+	pictureProfile:string;
 }
 
 const UserSchema = new Schema<IClientMessage>({
 	name: {
 		type: String,
-		required: true
+		required: false
+	},
+	pictureProfile: {
+		type: String,
+		required: false
 	},
 	phone: {
-		type: Number,
+		type: String,
 		required: true,
 		unique: true
 	},
@@ -31,9 +37,10 @@ const UserSchema = new Schema<IClientMessage>({
 	},
 	messages: [{
 		sender: {
-			type: Types.ObjectId,
-			ref: "User", 
-			required: true
+			type: String,
+			enum: ["client", "attendant"],
+			default: "client",
+			required: false
 		},
 		content: {
 			type: String,
@@ -41,9 +48,15 @@ const UserSchema = new Schema<IClientMessage>({
 		},
 		timestamp: {
 			type: Date,
-			default: Date.now
+			default: Date.now,
+			required: false
 		}
-	}]
+	}],
+	store: {
+		type: String,
+		required: true,
+		default: "all"
+	}
 });
 
-export const User = model<IClientMessage>("User", UserSchema);
+export const ClientMessage = model<IClientMessage>("ClientMessage", UserSchema);

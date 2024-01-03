@@ -11,7 +11,8 @@ export const createUser = async (req : Request, res : Response 	) => {
 		username: req.body.username,
 		email: req.body.email,
 		password: passwordHash,
-		role: "admin"
+		role: "admin",
+		
 	});
 
 	try {

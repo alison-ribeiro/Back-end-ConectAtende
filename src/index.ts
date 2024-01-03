@@ -7,6 +7,7 @@ import cors from "cors";
 import passport from "passport";
 import mongoose from "mongoose";
 import api from "./routes/api";
+import { initialize } from "./whatsapp";
 
 dotenv.config();
 
@@ -22,6 +23,8 @@ mongoose.connect(`${dbUrl}${dbName}`)
 		server.use(cors({
 
 		}));
+
+
 		server.use(express.json());
 		server.use(express.static(path.join(__dirname, "../public")));
 		
@@ -47,6 +50,14 @@ mongoose.connect(`${dbUrl}${dbName}`)
 		server.use(errorHandler);
 		
 		server.listen(process.env.PORT);
+
+		initialize().then(() => {
+			console.log("WhatsApp client initialized");
+	
+		}).catch((error) => {
+			console.error("Failed to initialize WhatsApp client:", error);
+		});
+
 		
 	})
 	.catch((err) => console.log("Erro ao conectar ao MongoDB: " + err));

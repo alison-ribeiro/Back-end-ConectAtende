@@ -1,27 +1,11 @@
 import { Request, Response } from "express";
 import { body, validationResult } from "express-validator";
-import jwt from "jsonwebtoken";
 import {User} from "../models/User";
-
-
-
-import { generateToken } from "../utils/tokenUtils";
-
 import { createUser } from "./userController";
-import { hashPassword } from "../utils/passwordHashUtils";
-import { compareHash } from "../utils/passwordHashCompareUtils";
-import { toExtractIdToken } from "../utils/toExtractIdToken";
+import { authenticateUser, changeUserPassword } from "../services/authService";
 
-export const ping = (req : Request, res : Response) => { 
-	const token= req.headers.authorization as string;
-	
-	const decoded = toExtractIdToken(token);
-	
-	res.json({ pong: decoded });
-};
  
 export const register = [
-	
 	body("name").trim().escape().notEmpty().withMessage("Nome não informado"),
 	body("email").toLowerCase().isEmail().withMessage("E-mail não informado").normalizeEmail()
 		.custom(async (value) => {
@@ -61,32 +45,14 @@ export const login = [
 	async (req: Request, res: Response) => {
 		const { loginIdentifier, password } = req.body;
 
-		const user = await User.findOne({
-			$or: [
-				{ email: loginIdentifier },
-				{ username: loginIdentifier }
-			]
-		});
-
-		if (!user) {
-			return res.status(422).json({ error: "Usuário não encontrado" });
-		}
-
-		const checkPassword = await compareHash(password, user.password);
-
-		if (!checkPassword) {
-			return res.status(422).json({ error: "Senha incorreta" });
-		}
-
 		try {
-			const token = generateToken(user);
+			const token = await authenticateUser(loginIdentifier, password);
 			res.status(200).json({ msg: "Autenticação realizada com sucesso", token });
 		} catch (error) {
-			res.status(401).json({ error: "Falha na autenticação" });
+			res.status(401).json({ error: error });
 		}
 	}
 ];
-
 
 export const changePassword = [
 	body("email")
@@ -100,7 +66,7 @@ export const changePassword = [
 		.trim().escape().notEmpty().withMessage("Confirmação de senha não informada"),
 
 	async (req: Request, res: Response) => {
-		const { email, newPassword, confirmPassword } = req.body;
+		const { email, password, newPassword, confirmPassword } = req.body;
 		const errors = validationResult(req);
 
 		if (!errors.isEmpty()) {
@@ -108,30 +74,10 @@ export const changePassword = [
 		}
 
 		try {
-			const user = await User.findOne({ email });
-
-			if (!user) {
-				return res.status(404).json({ error: "Usuário não encontrado" });
-			}
-
-			const checkPassword = await compareHash(req.body.password, user.password);
-
-			if (!checkPassword) {
-				return res.status(422).json({ error: "Senha incorreta" });
-			}
-
-			if (newPassword !== confirmPassword) {
-				return res.status(422).json({ error: "Senhas não conferem" });
-			}
-
-			const passwordHash = await hashPassword(newPassword);
-			user.password = passwordHash;
-
-			await user.save();
-
+			await changeUserPassword(email, password, newPassword, confirmPassword);
 			res.status(200).json({ message: "Senha alterada com sucesso" });
 		} catch (error) {
-			res.status(500).json({ error: "Erro ao alterar a senha" });
+			res.status(500).json({ error: error });
 		}
 	}
 ];

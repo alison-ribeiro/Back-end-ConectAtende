@@ -1,57 +1,72 @@
-import { Client, LocalAuth,  Message } from "whatsapp-web.js";
+import { Client, LocalAuth, Message } from "whatsapp-web.js";
 import qrcode from "qrcode-terminal";
+import { startingConversation } from "./startingConversation";
+import { registerMessage } from "../services/registerMessageDB";
+import { stores } from "../mocks/stores";
 
-const client = new Client({
-	authStrategy: new LocalAuth()
-});
-
-client.on("qr", (qr: string) => {
-	qrcode.generate(qr, {small: true});
-});
-
-client.on("ready", () => {
-	console.log("Client is ready!");
-});
-
-let firstMessage = true; 
-let optionMenssage = true;
-
-client.on("message", async (message:Message) => {
-	if (message.body === "get profile pic") {
-		const chat = await message.getChat();
-		const contact = await client.getContactById(chat.id._serialized);
-		contact.getProfilePicUrl().then((url: string) => {
-			const user = {
-				name: contact.name,
-				numberPhone: contact.number,
-				pictureProfile: url,
-				pendingMessage: true
-			};
-			console.log(user);
-			console.log("id", chat.id._serialized);
-		}).catch((error : Error) => {
-			console.log("Error:", error);
+let whatsappClient: Client | null = null;
+export const initialize = async () => {
+	try {
+		whatsappClient = new Client({
+			authStrategy: new LocalAuth()
 		});
+		
+		
+		whatsappClient.on("qr", (qr: string) => {
+			qrcode.generate(qr, {small: true});
+		});
+		
+		whatsappClient.on("ready", () => {
+			console.log("whatsappClient is ready!");
+		});
+		
+		const startMessage: { [key: string]: boolean } = {};
+		const storeOptions: {[key: string]: boolean} = {};
+		
+		whatsappClient.on("message", async (message:Message) => {
+			console.log(message.body);
+			const numberPhone:string = message.from;
+			const messages:string = message.body;
+			console.log(startMessage);
+			
+			if(!startMessage[numberPhone]){
+				startMessage[numberPhone] = true;
+				storeOptions[numberPhone] = true;
+				if (whatsappClient === null) {
+					console.error("WhatsApp client is not initialized");
+					return;
+				}
+				startingConversation(whatsappClient, numberPhone);
+				
+			}else if(storeOptions[numberPhone]){
+				if (whatsappClient === null) {
+					console.error("WhatsApp client is not initialized");
+					return;
+				}
+				if(stores[messages]){
+					whatsappClient.sendMessage(numberPhone, `Transferindo mensagem para loja ${stores[messages]}`);
+					storeOptions[numberPhone] = false;
+				}else{
+					whatsappClient.sendMessage(numberPhone, "Opção inválida");
+				}
+			}
+	
+			registerMessage(numberPhone, messages);
+						
+		});
+		
+		whatsappClient.initialize();
+		
+	} catch  {
+		console.log("Erro ao inicializar whatssap");
 	}
-	if (firstMessage){
-		client.sendMessage(message.from, "Olá, qual loja você gostaria de ser atendido ? 1- Gravatai 2- Canoas");
-		firstMessage = false;
-	}
-	if(optionMenssage){
-		if(message.body === "1"){
-			client.sendMessage(message.from, "Transferindo mensagem para loja Gravatai");
-			optionMenssage = false;
-		}
-		if(message.body === "2"){
-			client.sendMessage(message.from, "Transferindo mensagem para loja Canoas");
-			optionMenssage = false;
-		}
-	}else{
-		client.sendMessage(message.from, message.body);
-	}
-        
-});
+	
 
+};
 
- 
-client.initialize();
+export const getWhatsAppClient = () => {
+	if (!whatsappClient) {
+		throw new Error("WhatsApp client not initialized");
+	}
+	return whatsappClient;
+};

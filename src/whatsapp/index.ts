@@ -11,7 +11,6 @@ export const initialize = async () => {
 			authStrategy: new LocalAuth()
 		});
 		
-		
 		whatsappClient.on("qr", (qr: string) => {
 			qrcode.generate(qr, {small: true});
 		});
@@ -19,51 +18,61 @@ export const initialize = async () => {
 		whatsappClient.on("ready", () => {
 			console.log("whatsappClient is ready!");
 		});
+		interface StartMessages {
+			[key: string]: { startMessage: boolean, storeOptions: boolean }
+		}
 		
-		const startMessage: { [key: string]: boolean } = {};
-		const storeOptions: {[key: string]: boolean} = {};
-		
-		whatsappClient.on("message", async (message:Message) => {
-			console.log(message.body);
-			const numberPhone:string = message.from;
-			const messages:string = message.body;
-			const idMessage:string = message.id._serialized;
+		const startMessages:StartMessages = {};
+	
+		whatsappClient.on("message_create", async (message: Message) => {
+			const messages: string = message.body;
+			const idMessage: string = message.id._serialized;
+			const fromMe: boolean = message.id.fromMe;
 
+			let numberPhone: string ;
+			if(fromMe){
+				numberPhone = message.to;
+			}else{
+				numberPhone = message.from;
+			}
+
+			if (!startMessages[numberPhone]
+				&& !fromMe) {
+				startMessages[numberPhone] = { startMessage: false, storeOptions: false };
+			}
 			
-			
-			if(!startMessage[numberPhone]){
-				startMessage[numberPhone] = true;
-				storeOptions[numberPhone] = true;
+			if (!startMessages[numberPhone].startMessage && !fromMe) {
+				startMessages[numberPhone] = { startMessage: true, storeOptions: true };
+				console.log(startMessages);
 				if (whatsappClient === null) {
 					console.error("WhatsApp client is not initialized");
 					return;
 				}
 				startingConversation(whatsappClient, numberPhone);
-				
-			}else if(storeOptions[numberPhone]){
+	
+			} else if (startMessages[numberPhone]?.storeOptions && !fromMe) {
 				if (whatsappClient === null) {
 					console.error("WhatsApp client is not initialized");
 					return;
 				}
-				if(stores[messages]){
+				if (stores[messages]) {
 					whatsappClient.sendMessage(numberPhone, `Transferindo mensagem para loja ${stores[messages]}`);
-					storeOptions[numberPhone] = false;
-				}else{
+					startMessages[numberPhone].storeOptions = false;
+				} else {
 					whatsappClient.sendMessage(numberPhone, "Opção inválida");
 				}
+			} else if (fromMe) {
+				registerMessage(numberPhone, messages, idMessage, "attendant");
+			} else {
+				registerMessage(numberPhone, messages, idMessage);
 			}
-	
-			registerMessage(numberPhone, messages, idMessage);
-						
 		});
-		
+	
 		whatsappClient.initialize();
-		
+
 	} catch  {
 		console.log("Erro ao inicializar whatssap");
 	}
-	
-
 };
 
 export const getWhatsAppClient = () => {

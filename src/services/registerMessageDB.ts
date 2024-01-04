@@ -12,7 +12,8 @@ export const registerMessage = async (phoneNumber:string, messages:string, idMes
 				content: messages,
 				sender,
 				timestamp: new Date(),
-				delete: false
+				delete: false,
+				editedMessage: ""
 			});
 			await clientMessage.save();
 		}

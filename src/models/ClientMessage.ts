@@ -6,6 +6,7 @@ interface IMessage {
   timestamp: Date;
 	idMessage:string;
 	delete:boolean;
+	editedMessage:string;
 }
 
 export interface IClientMessage extends Document {
@@ -43,6 +44,10 @@ const UserSchema = new Schema<IClientMessage>({
 			type: String,
 			required: true,
 			unique: true
+		},
+		editedMessage:{
+			type: String,
+			required: false
 		},
 		sender: {
 			type: String,

@@ -1,17 +1,18 @@
 import { ClientMessage } from "../models/ClientMessage";
 
 
-export const registerMessage = async (phoneNumber:string, messages:string, sender:"client" | "attendant" = "client") => { 
+export const registerMessage = async (phoneNumber:string, messages:string, idMessage:string, sender:"client" | "attendant" = "client" ) => { 
 	try {
 		const clientMessage = await ClientMessage.findOne({ phone: phoneNumber });
 		if(!clientMessage){
-			console.log("aqui", clientMessage);
-			return console.log({message: "Erro ao enviar mensagem"});
+			return console.log({message: "Client não encontrado"});
 		}else{
 			clientMessage.messages.push({
+				idMessage,
 				content: messages,
 				sender,
 				timestamp: new Date(),
+				delete: false
 			});
 			await clientMessage.save();
 		}

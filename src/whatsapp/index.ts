@@ -27,7 +27,9 @@ export const initialize = async () => {
 			console.log(message.body);
 			const numberPhone:string = message.from;
 			const messages:string = message.body;
-			console.log(startMessage);
+			const idMessage:string = message.id._serialized;
+
+			
 			
 			if(!startMessage[numberPhone]){
 				startMessage[numberPhone] = true;
@@ -51,7 +53,7 @@ export const initialize = async () => {
 				}
 			}
 	
-			registerMessage(numberPhone, messages);
+			registerMessage(numberPhone, messages, idMessage);
 						
 		});
 		

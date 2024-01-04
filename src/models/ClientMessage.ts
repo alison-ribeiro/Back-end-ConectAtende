@@ -4,6 +4,8 @@ interface IMessage {
   sender: string;
   content: string;
   timestamp: Date;
+	idMessage:string;
+	delete:boolean;
 }
 
 export interface IClientMessage extends Document {
@@ -13,6 +15,7 @@ export interface IClientMessage extends Document {
   messages: IMessage[];
 	store:string;
 	pictureProfile:string;
+	
 }
 
 const UserSchema = new Schema<IClientMessage>({
@@ -36,6 +39,11 @@ const UserSchema = new Schema<IClientMessage>({
 		default: "pending"
 	},
 	messages: [{
+		idMessage:{
+			type: String,
+			required: true,
+			unique: true
+		},
 		sender: {
 			type: String,
 			enum: ["client", "attendant"],
@@ -49,6 +57,11 @@ const UserSchema = new Schema<IClientMessage>({
 		timestamp: {
 			type: Date,
 			default: Date.now,
+			required: false
+		},
+		delete: {
+			type: Boolean,
+			default: false,
 			required: false
 		}
 	}],

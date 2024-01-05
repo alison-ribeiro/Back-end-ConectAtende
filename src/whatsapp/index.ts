@@ -3,6 +3,8 @@ import qrcode from "qrcode-terminal";
 import { startingConversation } from "./startingConversation";
 import { registerMessage } from "../services/registerMessageDB";
 import { stores } from "../mocks/stores";
+import fs from "fs";
+import path from "path";
 
 let whatsappClient: Client | null = null;
 export const initialize = async () => {
@@ -24,16 +26,15 @@ export const initialize = async () => {
 		
 		const startMessages:StartMessages = {};
 	
-		whatsappClient.on("message_create", async (message: Message) => {
-			const messages: string = message.body;
-			const idMessage: string = message.id._serialized;
-			const fromMe: boolean = message.id.fromMe;
+		whatsappClient.on("message_create", async (msg: Message) => {
+			
+			const { hasMedia,mediaKey,to ,from, body, fromMe, id: { _serialized: idMessage } } = msg;
 
 			let numberPhone: string ;
 			if(fromMe){
-				numberPhone = message.to;
+				numberPhone = to;
 			}else{
-				numberPhone = message.from;
+				numberPhone = from;
 			}
 
 			if (!startMessages[numberPhone]
@@ -55,16 +56,36 @@ export const initialize = async () => {
 					console.error("WhatsApp client is not initialized");
 					return;
 				}
-				if (stores[messages]) {
-					whatsappClient.sendMessage(numberPhone, `Transferindo mensagem para loja ${stores[messages]}`);
+				if (stores[body]) {
+					whatsappClient.sendMessage(numberPhone, `Transferindo mensagem para loja ${stores[body]}`);
 					startMessages[numberPhone].storeOptions = false;
 				} else {
 					whatsappClient.sendMessage(numberPhone, "Opção inválida");
 				}
 			} else if (fromMe) {
-				registerMessage(numberPhone, messages, idMessage, "attendant");
+				registerMessage(numberPhone, body, idMessage, "attendant");
 			} else {
-				registerMessage(numberPhone, messages, idMessage);
+				if (hasMedia && mediaKey && body === "") {
+					const mediafile = await msg.downloadMedia();
+			
+					const dir = "./images";
+					if (!fs.existsSync(dir)){
+						fs.mkdirSync(dir);
+					}
+
+					const filename = `image-${new Date().getTime()}.jpg`;
+					const filePath = path.join(dir, filename);
+					fs.writeFile(filePath, mediafile.data, "base64", (err) => {
+						if (err) {
+							console.log(err);
+						} else {
+							console.log("Imagem baixada com sucesso!");
+						}
+					});console.log("Imagem baixada com sucesso!");
+					registerMessage(numberPhone, filePath, idMessage);
+				}else{
+					registerMessage(numberPhone, body, idMessage);
+				}
 			}
 		});
 	

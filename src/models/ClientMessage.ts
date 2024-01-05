@@ -7,6 +7,7 @@ interface IMessage {
 	idMessage:string;
 	delete:boolean;
 	editedMessage:string;
+	subtitle:string ;
 }
 
 export interface IClientMessage extends Document {
@@ -16,7 +17,6 @@ export interface IClientMessage extends Document {
   messages: IMessage[];
 	store:string;
 	pictureProfile:string;
-	
 }
 
 const UserSchema = new Schema<IClientMessage>({
@@ -48,6 +48,11 @@ const UserSchema = new Schema<IClientMessage>({
 		editedMessage:{
 			type: String,
 			required: false
+		},
+		subtitle: {
+			type: String ,
+			required: false,
+			default: ""
 		},
 		sender: {
 			type: String,

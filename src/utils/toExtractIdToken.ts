@@ -1,6 +1,6 @@
 import jwt, { JwtPayload } from "jsonwebtoken";
 
-export const toExtractIdToken = (token: string): string | undefined => {
+export function toExtractIdToken(token: string): string | undefined {
     
 	const secret = process.env.JWT_SECRET;
 
@@ -20,4 +20,4 @@ export const toExtractIdToken = (token: string): string | undefined => {
 	}
     
 	return undefined;
-};
+}

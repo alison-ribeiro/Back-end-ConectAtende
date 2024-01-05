@@ -1,11 +1,12 @@
 import { ClientMessage } from "../models/ClientMessage";
 
 
-export const registerMessage = async (phoneNumber:string, messages:string, idMessage:string, sender:"client" | "attendant" = "client" ) => { 
+export const registerMessage = async (phoneNumber:string, messages:string, idMessage:string, sender:"client" | "attendant" = "client", subtitle:string = "" ) => { 
+	console.log(subtitle);
 	try {
 		const clientMessage = await ClientMessage.findOne({ phone: phoneNumber });
 		if(!clientMessage){
-			return console.log({message: "Client não encontrado"});
+			return console.log({message: "Criando cliente"});
 		}else{
 			clientMessage.messages.push({
 				idMessage,
@@ -13,7 +14,8 @@ export const registerMessage = async (phoneNumber:string, messages:string, idMes
 				sender,
 				timestamp: new Date(),
 				delete: false,
-				editedMessage: ""
+				editedMessage: "",
+				subtitle
 			});
 			await clientMessage.save();
 		}

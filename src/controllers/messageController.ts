@@ -1,17 +1,30 @@
 import { Request, Response } from "express";
-import { Client } from "whatsapp-web.js";
+import { Client, MessageMedia } from "whatsapp-web.js";
 import { getWhatsAppClient } from "../whatsapp";
 
 import { ClientMessage } from "../models/ClientMessage";
+
+import fs from "fs";
+import path from "path";
 
 export const sendMessage = async (req : Request, res : Response) => { 
 	try {
 		const client:Client = getWhatsAppClient();
 		const { numberPhone, message } = req.body;
-		await client.sendMessage(numberPhone, message);
+		console.log(message);
+			
+		if (fs.existsSync(message) && fs.lstatSync(message).isFile()) {
+			const file = fs.readFileSync(message);
+			const ext = path.extname(message).slice(1);
+			const mediaType = ext === "mp3" ? "audio" : "image";
+			const media = new MessageMedia(`${mediaType}/${ext}`, file.toString("base64")); 
+			await client.sendMessage(numberPhone, media);
+		} else {
+			await client.sendMessage(numberPhone, message);
+		}
 		res.status(201).json({message: "Mensagem enviada com sucesso"});
-	} catch {
-		res.status(500).json({message: "Erro ao enviar mensagem"});
+	} catch (err){
+		res.status(500).json({message: "Erro ao enviar mensagem", err});
 	}
 };
 export const deleteMessage = async (req : Request, res : Response) => { 

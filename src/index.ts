@@ -26,9 +26,10 @@ mongoose.connect(`${dbUrl}${dbName}`)
 
 
 		server.use(express.json());
-		const filePath = path.join(__dirname, "../images");
+		
+		const filePath = path.join(__dirname, "../public");
 		console.log(filePath);
-		server.use("/images", express.static(filePath));
+		server.use("/public", express.static(filePath));
 		
 		server.use(express.urlencoded({ extended: true }));
 		server.use(api);

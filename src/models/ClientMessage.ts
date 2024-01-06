@@ -42,8 +42,9 @@ const UserSchema = new Schema<IClientMessage>({
 	messages: [{
 		idMessage:{
 			type: String,
-			required: true,
+			required: false,
 			unique: true
+			
 		},
 		editedMessage:{
 			type: String,
@@ -62,7 +63,7 @@ const UserSchema = new Schema<IClientMessage>({
 		},
 		content: {
 			type: String,
-			required: true
+			required: false
 		},
 		timestamp: {
 			type: Date,

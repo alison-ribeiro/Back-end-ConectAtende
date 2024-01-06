@@ -2,12 +2,13 @@ import { ClientMessage } from "../models/ClientMessage";
 
 
 export const registerMessage = async (phoneNumber:string, messages:string, idMessage:string, sender:"client" | "attendant" = "client", subtitle:string = "" ) => { 
-	console.log(subtitle);
+	console.log("aqui", phoneNumber, messages, idMessage, sender, subtitle);
 	try {
 		const clientMessage = await ClientMessage.findOne({ phone: phoneNumber });
 		if(!clientMessage){
-			return console.log({message: "Criando cliente"});
+			return console.log({message: "Cliente Não encontrado"});
 		}else{
+			console.log("Salvando no bd");
 			clientMessage.messages.push({
 				idMessage,
 				content: messages,

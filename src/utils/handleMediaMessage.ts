@@ -29,12 +29,11 @@ export async function handleMediaMessage(msg: Message, numberPhone: string ) {
 				console.log("Mídia baixada com sucesso!");
 			}
 		});
-		console.log("aqui ?",msg.body);
+		
 		fromMe 
 			? registerMessage(numberPhone, filePath, idMessage, "attendant", msg.body ? msg.body : undefined) 
 			: registerMessage(numberPhone, filePath, idMessage, "attendant", msg.body ? msg.body : undefined);
-	} else {
-		console.log("aqui",msg.body);
+	}else{
 		fromMe ? registerMessage(numberPhone, body, idMessage, "attendant") :  registerMessage(numberPhone, body, idMessage);
 	}
 }

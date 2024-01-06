@@ -65,6 +65,7 @@ export const editMessage = async (req : Request, res : Response) => {
 	try {
 		const client:Client = getWhatsAppClient();
 		const {  numberPhone, newMessage ,idMessage } = req.body;
+		console.log(numberPhone, newMessage, idMessage);
 		const clientMessage = await ClientMessage.findOne({ phone:numberPhone });
 		if(!clientMessage){
 			return res.status(404).json({message: "Client não encontrado"});

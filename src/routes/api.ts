@@ -4,6 +4,7 @@ import * as messageController from "../controllers/messageController";
 //import { roleRoute } from "../middlewares/auth";
 
 const router = Router();
+router.get("/",  messageController.getMessages);
 router.post("/",  messageController.sendMessage);
 router.delete("/", messageController.deleteMessage);
 router.put("/", messageController.editMessage);

@@ -94,3 +94,16 @@ export const editMessage = async (req : Request, res : Response) => {
 		res.status(500).json({message: "Erro ao deletar mensagem"});
 	}
 };
+
+export const getMessages = async (req : Request, res : Response) => {
+	const {  numberPhone } = req.body;
+	try {
+		const clientMessage = await ClientMessage.findOne({ phone:numberPhone });
+		if(!clientMessage){
+			return res.status(404).json({message: "Client não encontrado"});
+		}
+		res.status(200).json({messages: clientMessage.messages});
+	} catch  {
+		res.status(500).json({message: "Erro ao buscar mensagens"});
+	}
+};

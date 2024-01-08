@@ -17,9 +17,6 @@ export const initialize = async () => {
 			console.log("whatsappClient is ready!");
 		});
 		
-		
-		
-		
 
 		whatsappClient.on("message", async (message:Message) => {
 			const numberPhone:string = message.from;

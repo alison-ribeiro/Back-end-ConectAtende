@@ -3,8 +3,9 @@ import fs from "fs";
 import path from "path";
 import { registerMessage } from "../services/registerMessageDB";
 
-export async function handleMediaMessage(msg: Message, numberPhone: string ) {
+export async function handleMediaMessageAndString(msg: Message, numberPhone: string ) {
 	const { hasMedia, mediaKey, body, fromMe, id: { _serialized: idMessage } } = msg;
+	
 
 	if (hasMedia && mediaKey) {
 		const mediafile = await msg.downloadMedia();

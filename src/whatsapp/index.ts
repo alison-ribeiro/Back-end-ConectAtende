@@ -3,8 +3,13 @@ import qrcode from "qrcode-terminal";
 
 import { initializeStartMessages } from "../utils/initializeStartMessages";
 import { handleStoreOptions } from "../services/handleStoreOptions";
-import { handleMediaMessage } from "../utils/handleMediaMessage";
+import { handleMediaMessageAndString } from "../utils/handleMediaMessage";
 import { startingConversation } from "../services/startingConversation";
+import { getIo } from "../io";
+
+
+
+
 
 export interface StartMessages {
 	[key: string]: { startMessage: boolean, storeOptions: boolean }
@@ -43,7 +48,13 @@ export const initialize = async () => {
 			} else if (startMessages[numberPhone] && startMessages[numberPhone].storeOptions && !fromMe) {
 				handleStoreOptions(startMessages,whatsappClient,numberPhone, body);
 			} else {
-				handleMediaMessage(msg, numberPhone);
+				const io = getIo();
+				if(io)
+					io.emit("apiCall");
+				else
+					console.log("io is undefined");
+				
+				handleMediaMessageAndString(msg, numberPhone);
 			}
 		});
 		whatsappClient.initialize();

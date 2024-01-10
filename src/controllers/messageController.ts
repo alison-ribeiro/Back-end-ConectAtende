@@ -27,6 +27,7 @@ export const sendMessage = async (req : Request, res : Response) => {
 		res.status(500).json({message: "Erro ao enviar mensagem", err});
 	}
 };
+
 export const deleteMessage = async (req : Request, res : Response) => { 
 	try {
 		const client:Client = getWhatsAppClient();

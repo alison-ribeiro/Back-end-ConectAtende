@@ -9,6 +9,9 @@ import mongoose from "mongoose";
 import api from "./routes/api";
 import { initialize } from "./whatsapp";
 
+import { Server as IOServer } from "socket.io";
+import http from "http";
+import { setIo } from "./io";
 dotenv.config();
 
 
@@ -20,15 +23,22 @@ mongoose.connect(`${dbUrl}${dbName}`)
 
 	.then(() => {
 		const server = express();
-		server.use(cors({
+		const httpServer = http.createServer(server);
+		server.use(cors());
 
-		}));
+		const io = new IOServer(httpServer, {
+			cors: {
+				origin: "*",
+			},
+		});
+		setIo(io);
+		
 
 
 		server.use(express.json());
 		
 		const filePath = path.join(__dirname, "../public");
-		console.log(filePath);
+		
 		server.use("/public", express.static(filePath));
 		
 		server.use(express.urlencoded({ extended: true }));
@@ -45,14 +55,14 @@ mongoose.connect(`${dbUrl}${dbName}`)
 		
 		
 		
-		const errorHandler: ErrorRequestHandler = (err, req, res, next) => {
+		const errorHandler: ErrorRequestHandler = (err, req, res) => {
 			err.status ? res.status(err.status) : res.status(400);
 			err.message ? res.json({ error: err.message }) : res.json({ error: "Ocorreu algum erro" });
 		};
 		
 		server.use(errorHandler);
 		
-		server.listen(process.env.PORT);
+		httpServer.listen(process.env.PORT);
 
 		initialize().then(() => {
 			console.log("WhatsApp client initialized");
@@ -64,6 +74,3 @@ mongoose.connect(`${dbUrl}${dbName}`)
 		
 	})
 	.catch((err) => console.log("Erro ao conectar ao MongoDB: " + err));
-
-
-
